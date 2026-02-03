@@ -1,4 +1,6 @@
+
 #include "utils.h"
+#include "layers.h"  // Need this for Layer class implementation
 #include <cmath>
 #include <chrono>
 
@@ -110,27 +112,40 @@ ModelStats analyzeModel(const std::vector<Layer*>& layers,
 
 Tensor normalizeImage(const Tensor& image, float mean, float std) {
     std::vector<int> shape = image.getShape();
-    Tensor result(shape);
-    
     const auto& input_data = image.getData();
-    auto& output_data = result.getData();
+    std::vector<float> output_data(input_data.size());
     
     for (size_t i = 0; i < input_data.size(); ++i) {
         output_data[i] = (input_data[i] - mean) / std;
     }
     
-    return result;
+    return Tensor(output_data, shape);
 }
 
+// In utils.cpp, update isCUDAAvailable() function:
 bool isCUDAAvailable() {
 #ifdef HAS_CUDA
     int device_count = 0;
     cudaError_t error = cudaGetDeviceCount(&device_count);
-    return (error == cudaSuccess && device_count > 0);
+    if (error != cudaSuccess) {
+        // CUDA driver not installed or not compatible
+        return false;
+    }
+    return (device_count > 0);
 #else
     return false;
 #endif
 }
+
+// bool isCUDAAvailable() {
+// #ifdef HAS_CUDA
+//     int device_count = 0;
+//     cudaError_t error = cudaGetDeviceCount(&device_count);
+//     return (error == cudaSuccess && device_count > 0);
+// #else
+//     return false;
+// #endif
+// }
 
 void setDevice(int device_id) {
 #ifdef HAS_CUDA

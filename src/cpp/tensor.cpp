@@ -40,6 +40,90 @@ Tensor::Tensor(const std::vector<float>& data, const std::vector<int>& shape,
     grad.resize(total_size, 0.0f);
 }
 
+// Tensor::~Tensor() {
+//     // Default destructor - vector members will be automatically destroyed
+// }
+
+// Copy constructor
+Tensor::Tensor(const Tensor& other)
+    : shape(other.shape),
+      data(other.data),
+      grad(other.grad),
+      requires_grad(other.requires_grad),
+      creation_op(other.creation_op) {
+    // children vector is not copied
+}
+
+// Copy assignment operator
+Tensor& Tensor::operator=(const Tensor& other) {
+    if (this != &other) {
+        shape = other.shape;
+        data = other.data;
+        grad = other.grad;
+        requires_grad = other.requires_grad;
+        creation_op = other.creation_op;
+        // children is not copied
+    }
+    return *this;
+}
+
+// Destructor
+Tensor::~Tensor() {
+    // Automatic cleanup of vector members
+}
+
+// Elementwise operations
+Tensor Tensor::elementwiseMultiply(const Tensor& other) const {
+    if (data.size() != other.data.size()) {
+        throw std::runtime_error("Tensor size mismatch for elementwise multiplication");
+    }
+    
+    if (shape != other.shape) {
+        throw std::runtime_error("Tensor shape mismatch for elementwise multiplication");
+    }
+    
+    Tensor result(shape);
+    for (size_t i = 0; i < data.size(); ++i) {
+        result.data[i] = data[i] * other.data[i];
+    }
+    
+    return result;
+}
+
+Tensor Tensor::elementwiseAdd(const Tensor& other) const {
+    if (data.size() != other.data.size()) {
+        throw std::runtime_error("Tensor size mismatch for elementwise addition");
+    }
+    
+    if (shape != other.shape) {
+        throw std::runtime_error("Tensor shape mismatch for elementwise addition");
+    }
+    
+    Tensor result(shape);
+    for (size_t i = 0; i < data.size(); ++i) {
+        result.data[i] = data[i] + other.data[i];
+    }
+    
+    return result;
+}
+
+Tensor Tensor::elementwiseSubtract(const Tensor& other) const {
+    if (data.size() != other.data.size()) {
+        throw std::runtime_error("Tensor size mismatch for elementwise subtraction");
+    }
+    
+    if (shape != other.shape) {
+        throw std::runtime_error("Tensor shape mismatch for elementwise subtraction");
+    }
+    
+    Tensor result(shape);
+    for (size_t i = 0; i < data.size(); ++i) {
+        result.data[i] = data[i] - other.data[i];
+    }
+    
+    return result;
+}
+
 int Tensor::getTotalSize() const {
     int total = 1;
     for (int dim : shape) {

@@ -27,7 +27,7 @@ public:
     Tensor(const std::vector<int>& shape, bool requires_grad = false);
     Tensor(const std::vector<float>& data, const std::vector<int>& shape, 
            bool requires_grad = false);
-    
+    Tensor(const std::vector<int>& shape, const std::vector<float>& data, bool requires_grad = false);
     // Copy constructor and assignment
     Tensor(const Tensor& other);
     Tensor& operator=(const Tensor& other);

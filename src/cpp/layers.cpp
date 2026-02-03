@@ -1,7 +1,9 @@
+
 #include "layers.h"
 #include <cmath>
 #include <random>
 #include <algorithm>
+#include <stdexcept>
 
 Layer::Layer(const std::string& name, bool trainable) 
     : name(name), trainable(trainable) {}
@@ -68,9 +70,18 @@ int Conv2d::getMACs(const std::vector<int>& input_shape) const {
 }
 
 int Conv2d::getFLOPs(const std::vector<int>& input_shape) const {
+    if (input_shape.size() != 4) return 0;
+    
+    int batch_size = input_shape[0];
+    int in_h = input_shape[2];
+    int in_w = input_shape[3];
+    
+    int out_h = (in_h + 2 * padding - kernel_size) / stride + 1;
+    int out_w = (in_w + 2 * padding - kernel_size) / stride + 1;
+    
     // For convolution: MACs * 2 (multiply-add counts as 2 FLOPS)
-    return getMACs(input_shape) * 2 + 
-           batch_size * out_channels * out_h * out_w;  // Add bias
+    int macs = getMACs(input_shape);
+    return macs * 2 + batch_size * out_channels * out_h * out_w;  // Add bias
 }
 
 // MaxPool2d implementation
@@ -178,9 +189,9 @@ Tensor ReLU::forward(const Tensor& input) {
 }
 
 Tensor ReLU::backward(const Tensor& grad_output) {
-    Tensor result = grad_output;
     const auto& input_data = input_cache.getData();
-    auto& result_data = result.getData();
+    const auto& grad_data = grad_output.getData();
+    std::vector<float> result_data(grad_data);
     
     // Zero out gradient where input was negative
     for (size_t i = 0; i < input_data.size(); ++i) {
@@ -189,7 +200,7 @@ Tensor ReLU::backward(const Tensor& grad_output) {
         }
     }
     
-    return result;
+    return Tensor(result_data, grad_output.getShape());
 }
 
 // Softmax implementation
@@ -240,15 +251,15 @@ Tensor Dropout::backward(const Tensor& grad_output) {
         return grad_output;
     }
     
-    Tensor result = grad_output;
     const auto& mask_data = mask.getData();
-    auto& result_data = result.getData();
+    const auto& grad_data = grad_output.getData();
+    std::vector<float> result_data(grad_data.size());
     
-    for (size_t i = 0; i < result_data.size(); ++i) {
-        result_data[i] *= mask_data[i];
+    for (size_t i = 0; i < grad_data.size(); ++i) {
+        result_data[i] = grad_data[i] * mask_data[i];
     }
     
-    return result;
+    return Tensor(result_data, grad_output.getShape());
 }
 
 // BatchNorm2d implementation
